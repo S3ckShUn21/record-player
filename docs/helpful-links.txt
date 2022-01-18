@@ -1,0 +1,11 @@
+
+Running Rust in WSL2
+====================================================================================================
+https://harsimranmaan.medium.com/install-and-setup-rust-development-environment-on-wsl2-dccb4bf63700
+====================================================================================================
+
+Cross Compilation (Rust) / Deployment to RPi / Running Executable as a Service
+==============================================================================
+https://medium.com/swlh/compiling-rust-for-raspberry-pi-arm-922b55dbb050
+==============================================================================
+
