@@ -1,0 +1,57 @@
+1. What does spotify offer out of the box???
+
+    * Use the "Reference" of the "WebAPI" religiously
+    * It seems the API allows for everything I eventually want to do,
+      it just might take some work arounds for the more complex stuff
+
+2. Example
+
+
+Get Available Devices
+======================
+
+GET https://api.spotify.com/v1/me/player/devices
+
+{
+  "devices": [
+    {
+      "id": "014900acce730e30d8145f8fdf2d5c177dda9ab6",
+      "is_active": false,
+      "is_private_session": false,
+      "is_restricted": false,
+      "name": "Stephen's FireTVStick",
+      "type": "TV",
+      "volume_percent": 12
+    },
+    {
+      "id": "edb803ebde4a3355b2e514ea28e3923d915df273",
+      "is_active": true,
+      "is_private_session": false,
+      "is_restricted": false,
+      "name": "DESKTOP-F4DBPMD",
+      "type": "Computer",
+      "volume_percent": 61
+    }
+  ]
+}
+
+
+Pause Playback
+===============
+
+curl -X "PUT" "https://api.spotify.com/v1/me/player/pause?device_id=edb803ebde4a3355b2e514ea28e3923d915df273" 
+-H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer {OAuth TOKEN}
+
+Response = 204 (Which means it worked)
+Otherwise = >=400 <= 599 (Which means error)
+
+
+
+Start playing a specific track
+==============================
+
+* Use the Start/Resume Playback endpoint
+
+https://open.spotify.com/track/6TF8YvAijYJhWLcPmwanSk?si=a55fb376e9be4184
+
+"6TF8YvAijYJhWLcPmwanSk" is track id to put in the uris array (NOT the context_uri - thats only for artists, albums, and playlists)

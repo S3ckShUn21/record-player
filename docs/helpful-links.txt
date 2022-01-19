@@ -9,3 +9,7 @@ Cross Compilation (Rust) / Deployment to RPi / Running Executable as a Service
 https://medium.com/swlh/compiling-rust-for-raspberry-pi-arm-922b55dbb050
 ==============================================================================
 
+How to use the Spotify Web API
+=================================================================
+https://www.youtube.com/watch?v=c5sWvP9h3s8&ab_channel=ImdadCodes
+=================================================================
