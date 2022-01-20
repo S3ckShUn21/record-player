@@ -1,5 +1,6 @@
 mod spotify;
 
 fn main() {
-    println!("Hello, world!");
+    let s = spotify::Spotify::new();
+    s.test();
 }
