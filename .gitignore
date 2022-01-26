@@ -1,1 +1,7 @@
-/target
+# The build dirs
+target/
+debug/
+# For making executables (leave it for libs)
+Cargo.lock
+# For using dotenv files
+.env
