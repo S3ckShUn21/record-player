@@ -12,3 +12,7 @@ futures = { version = "0.3.*" }
 tokio = { version = "1", features = ["full"] } # For async stuff
 open = "2.0.2"
 dotenv = "0.15.0"
+
+# Raspberry Pi Peripheral Stuff
+spidev = "0.4.0"
+rfid-rs = "0.1.3"

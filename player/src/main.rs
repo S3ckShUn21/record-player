@@ -1,9 +1,87 @@
-mod spotify;
+// mod spotify;
 
-use dotenv;
-use open;
-use reqwest;
-use std::error::Error;
+// use dotenv;
+// use open;
+// use reqwest;
+// use std::error::Error;
+use std::{thread, time};
+
+use spidev::{Spidev, SpidevOptions, SpiModeFlags};
+use std::io;
+
+use rfid_rs;
+use rfid_rs::picc;
+
+fn create_spi() -> io::Result<Spidev> {
+    let mut spi = Spidev::open("/dev/spidev0.0")?;
+    let options = SpidevOptions::new()
+        .bits_per_word(8)
+        .max_speed_hz(20_000)
+        .mode(SpiModeFlags::SPI_MODE_0)
+        .build();
+    spi.configure(&options)?;
+    Ok(spi)
+}
+
+fn main() {
+    let spi = create_spi().unwrap();
+    let mut reader = rfid_rs::MFRC522 { spi };
+    reader.init().expect("Reader Initialization Failed!");
+
+    loop {
+        let found_card = reader.new_card_present().is_ok();
+
+        if found_card {
+
+            thread::sleep( time::Duration::from_millis(500) );
+ 
+            // Get the card's UID
+            let uid = match reader.read_card_serial() {
+                Ok(u) => u,
+                Err(e) => {
+                    println!("Could not read card: {:?}", e);
+                    continue
+                },
+            };
+            println!("Found a new card : {:02X?}", uid);
+            
+            
+            let key: rfid_rs::MifareKey = [0xffu8; 6];
+            let len = 18;
+
+            // Attempt to read all the blocks in the card 
+            for block in 0..64 {
+
+                // Authenticate the block so we can read data from it
+                // Technically we must only authenticate the sector (i.e. once every 4 blocks) which would save some time
+                match reader.authenticate(picc::Command::MfAuthKeyA, block, key, &uid) {
+                    Ok(_) => (),
+                    Err(e) => {
+                        println!("Could not authenticate card {:?}", e);
+                        break
+                    }
+                }
+    
+                // Attempt to read data from the block
+                match reader.mifare_read(block, len) {
+                    Ok(response) => println!("Read block {:02}: {:02X?}", block, response.data),
+                    Err(e) => {
+                        println!("Failed reading block {}: {:?}", block, e);
+                        break
+                    }
+                }
+
+            }
+
+
+            reader.halt_a().expect("Could not halt");
+            reader.stop_crypto1().expect("Could not stop crypto1");
+
+        }
+    }
+}
+
+/* Block out this code for right now so I can test the RPI peripheral stuff
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -43,6 +121,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+*/
 
 // **** STEP 1 ****
 // This what was done above in the code

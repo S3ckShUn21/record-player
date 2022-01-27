@@ -1,14 +1,17 @@
 use reqwest;
 
+#[allow(dead_code)]
 pub enum SkipDirection {
     Next,
     Prev
 }
 
+#[allow(dead_code)]
 pub struct Spotify {
     client: reqwest::Client
 }
 
+#[allow(dead_code)]
 impl Spotify {
 
     pub fn new() -> Spotify {
