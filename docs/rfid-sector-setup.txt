@@ -1,0 +1,36 @@
+Mifare Classics have 1k of memory.
+Split into 16 sectors.
+Each sector has 4 blocks. (i.e. 64 total blocks)
+
+
+Notes on spotify URI
+====================
+* the uri is ALWAYS prepended by the text "spotify:", so I will omit storing it to save on memory
+* the string will start at block 28 (sector 7, block 0) and take the next 2 full blocks, ending in the null byte
+
+
+Notes on raw JSON
+=================
+* This is what will allow for a little customization when querying the spotify api for the different endpoints
+* The JSON will start @ block 32 and have 512 bytes that it can take up.
+* It may not take the whole 512 bytes and will end in the null byte.
+
+
+                                        Sector Breakdown
+=====================================================================================================
+SECTOR 00 : Reserved for the card's UID (only in the 1st block, but I won't mess with it) 
+SECTOR 01 : Unused
+SECTOR 02 : Unused
+SECTOR 03 : Unused
+SECTOR 04 : Unused
+SECTOR 05 : Unused
+SECTOR 06 : Unused
+SECTOR 07 : Spotify URI will go here ( Only need 32 bytes out of the 64, so 2 blocks )
+SECTOR 08 : Raw JSON for a spotify query
+SECTOR 09 : Raw JSON for a spotify query
+SECTOR 10 : Raw JSON for a spotify query
+SECTOR 11 : Raw JSON for a spotify query
+SECTOR 12 : Raw JSON for a spotify query
+SECTOR 13 : Raw JSON for a spotify query
+SECTOR 14 : Raw JSON for a spotify query
+SECTOR 15 : Raw JSON for a spotify query

@@ -1,0 +1,5 @@
+TRACK => spotify:track:1YlulsUKDduOmC7WxvXYPW
+ALBUM => spotify:album:1RM6MGv6bcl6NrAG8PGoZk
+PLAYLIST => spotify:playlist:75KTcyfDmF2kr7cDkfTRfp
+ARTIST => spotify:artist:5vGXVYudNgm9E7jhXMM0Ro
+PODCAST / SHOW => spotify:show:3fonY7n07M7eCfTGukfw0a
