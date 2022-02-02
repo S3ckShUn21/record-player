@@ -1,6 +1,7 @@
 # The build dirs
 target/
 debug/
+testbench/
 # For making executables (leave it for libs)
 Cargo.lock
 # For using dotenv files

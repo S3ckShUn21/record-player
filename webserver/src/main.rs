@@ -1,30 +1,31 @@
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
-use rocket::response::content::Html;
+use std::fs;
+use std::io;
+use std::str;
 
 #[get("/")]
-fn index() -> Html<&'static str> {
-    Html(
-    r#"
-    <html>
-        <body> 
-            Hello from Raspberry Pi
-            <a href="http://youtube.com">
-                <button>Click Me</button>
-            </a>
-        </body>
-    </html>
-    "#
-    )
+fn index() -> &'static str {
+    "Nothing to see here..."
+}
+
+#[get("/?<code>&<state>")]
+fn code_extraction(code: &str, state: &str) -> io::Result<&'static str> {
+    // Check to see if the state is a match
+    let file_bytes = fs::read("state")?;
+    let current_state: &str = str::from_utf8(&file_bytes).unwrap();
+
+    if current_state == state {
+        // Write the code retrieved from the query to the code file
+        fs::write("code", code)?;
+        Ok("Login Successful!")
+    } else {
+        Ok("Error: State Invalid!")
+    }
 }
 
 #[launch]
 fn rocket() -> _ {
-
-    let config = rocket::Config::figment()
-                    .merge(("port", 8080))
-                    .merge(("address", "0.0.0.0"));
-
-    rocket::custom(config)
-                    .mount("/", routes![index])
+    rocket::build().mount("/", routes![index, code_extraction])
 }
