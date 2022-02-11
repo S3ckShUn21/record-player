@@ -2,5 +2,6 @@
 
 members = [
     "player",
-    "webserver"
+    "webserver",
+    "spotify-lib",
 ]
