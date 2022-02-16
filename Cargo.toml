@@ -3,5 +3,6 @@
 members = [
     "player",
     "webserver",
-    "spotify-api"
+    "spotify-api",
+    "frontend",
 ]

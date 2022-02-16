@@ -2,6 +2,7 @@
 target/
 debug/
 testbench/
+dist/
 # For making executables (leave it for libs)
 Cargo.lock
 # For using dotenv files
