@@ -5,9 +5,16 @@ use std::fs;
 use std::io;
 use std::str;
 
+mod cors;
+
 #[get("/")]
 fn index() -> &'static str {
     "Nothing to see here..."
+}
+
+#[get("/alive")]
+fn alive() -> &'static str {
+    "Backend Alive"
 }
 
 #[get("/?<code>&<state>")]
@@ -27,5 +34,10 @@ fn code_extraction(code: &str, state: &str) -> io::Result<&'static str> {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, code_extraction])
+    let config = rocket::Config::figment()
+                    .merge(("port", 5000));
+    rocket::custom(config)
+        .attach(cors::CORS)
+        .mount("/", routes![index, alive, code_extraction])
+        
 }
