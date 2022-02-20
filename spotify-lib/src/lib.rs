@@ -8,6 +8,10 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::time::UNIX_EPOCH;
 
+use base64::encode;
+
+use dotenv;
+
 //
 // RFID Card
 //
@@ -47,7 +51,7 @@ pub struct Record {
 pub struct SpotifyApi {
     #[serde(skip)]
     file_path: PathBuf,
-    api_client_id: String,
+    basic_auth_string: String,
     access_token: String,
     refresh_token: String,
     expiration_date: time::Duration, // All durations will be in relation to UNIX_EPOCH
@@ -55,13 +59,49 @@ pub struct SpotifyApi {
 
 /// Wrapper Struct to help capture the https response from getting access tokens
 #[derive(Serialize, Deserialize)]
-struct AccessTokenResponse {
+pub struct AccessTokenResponse {
     access_token: String,
     token_type: String,
     scope: String,
     expires_in: u64,
     #[serde(default)]
     refresh_token: String, // This may not be here if we're requesting a refreshed access token from the token endpoint
+}
+
+//
+// Module Functions
+//
+
+pub fn get_access_token_response(code: &str) -> Result<AccessTokenResponse, Box<dyn Error>> {
+    let auth_string = encode_basic_auth_string(
+        dotenv::var("CLIENT_ID").unwrap().as_str(),
+        dotenv::var("CLIENT_SECRET").unwrap().as_str(),
+    );
+
+    let res: AccessTokenResponse = ureq::post("https://accounts.spotify.com/api/token")
+        .set("Authorization", auth_string.as_str())
+        .set("Content-Type", "application/x-www-form-urlencoded")
+        .send_form(&[
+            ("grant_type", "authorization_code"),
+            ("code", code),
+            (
+                "redirect_uri",
+                dotenv::var("REDIRECT_URI").unwrap().as_str(),
+            ),
+        ])?
+        .into_json()?;
+
+    Ok(res)
+}
+
+fn encode_basic_auth_string(client_id: &str, client_secret: &str) -> String {
+    let mut concat = client_id.to_owned();
+    concat.push(':');
+    concat.push_str(client_secret);
+    let encoded = encode(concat);
+    let mut final_str = "Basic ".to_owned();
+    final_str.push_str(encoded.as_str());
+    final_str
 }
 
 // Methods
@@ -83,8 +123,26 @@ impl SpotifyApi {
     // Constructor
     //
 
+    pub fn from_token_data(cache_file: &PathBuf, token_data: AccessTokenResponse) -> SpotifyApi {
+        let func_now = time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        let expiration_date = func_now + time::Duration::from_secs(token_data.expires_in);
+
+        let auth_string = encode_basic_auth_string(
+            dotenv::var("CLIENT_ID").unwrap().as_str(),
+            dotenv::var("CLIENT_SECRET").unwrap().as_str(),
+        );
+
+        SpotifyApi {
+            file_path: cache_file.clone(),
+            basic_auth_string: auth_string,
+            access_token: token_data.access_token,
+            refresh_token: token_data.refresh_token,
+            expiration_date,
+        }
+    }
+
     /// Only call this function if you know the cache file exists
-    pub fn new(cache_file: &PathBuf) -> Result<SpotifyApi, Box<dyn Error>> {
+    pub fn read(cache_file: &PathBuf) -> Result<SpotifyApi, Box<dyn Error>> {
         let file = std::fs::File::open(cache_file)?;
         let mut s_api: SpotifyApi = serde_json::from_reader(file)?;
         s_api.file_path = cache_file.clone();
@@ -92,17 +150,30 @@ impl SpotifyApi {
     }
 
     //
-    // Public Functions
+    // Helper Functions
+    //
+
+    pub fn refresh(&mut self, token_data: AccessTokenResponse) {
+        let func_now = time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        self.access_token = token_data.access_token;
+        self.expiration_date = func_now + time::Duration::from_secs(token_data.expires_in);
+    }
+
+    pub fn cache(&self) -> Result<(), Box<dyn Error>> {
+        let cache_file = std::fs::File::create(&self.file_path)?; // Overwrite the existing file
+        serde_json::to_writer(cache_file, self)?;
+        Ok(())
+    }
+
+    //
+    // Endpoint Functions
     //
 
     pub fn pause_playback(&mut self) -> Result<ureq::Response, Box<dyn Error>> {
         self.check_token_expiration()?;
 
         let res = ureq::put("https://api.spotify.com/v1/me/player/pause")
-            .set(
-                "Authorization",
-                ["Bearer ", self.access_token.as_str()].join("").as_str(),
-            )
+            .set("Authorization", self.basic_auth_string.as_str())
             .set("Content-Type", "application/json")
             .set("Content-Length", "0")
             .call()?;
@@ -113,10 +184,7 @@ impl SpotifyApi {
         self.check_token_expiration()?;
 
         let res = ureq::put("https://api.spotify.com/v1/me/player/play")
-            .set(
-                "Authorization",
-                ["Bearer ", self.access_token.as_str()].join("").as_str(),
-            ) // TODO : Is this the best way to concat strs?
+            .set("Authorization", self.basic_auth_string.as_str())
             .set("Content-Type", "application/json")
             .send_json(ureq::json!({
                 "uris" : ["spotify:track:6o46wIUnoKS8UABL36UuLL"],
@@ -138,30 +206,20 @@ impl SpotifyApi {
             return Ok(());
         }
 
-        // Otherwise the token will be invalid, so refresh it
-        println!("Refreshing Token!!!");
-
         // Run the request to get another access_token
         let access_token_res: AccessTokenResponse =
             ureq::post("https://accounts.spotify.com/api/token")
-                .set("Authorization", "Basic NTgxYTE3Mjc0YWRlNGFmYWI0MmU0ZDJjZThlOGI5NzE6YmY4ZDhhNTI3M2U3NDk4NGE0OGU2OGVkYWJjOGRjYWQ=") // TODO : Add client_secret to struct so I can calculate this on the fly
+                .set("Authorization", self.basic_auth_string.as_str())
                 .set("Content-Type", "application/x-www-form-urlencoded")
                 .send_form(&[
                     ("grant_type", "refresh_token"),
                     ("refresh_token", self.refresh_token.as_str()),
                 ])?
                 .into_json()?;
-        // Use the JSON to modify the spotify api
-        self.access_token = access_token_res.access_token;
-        self.expiration_date = func_now + time::Duration::from_secs(access_token_res.expires_in);
 
-        println!("Attempting to serialize");
-
-        println!("{:?}", &self.file_path);
-
-        // Cache the SpotifyApi struct
-        let cache_file = std::fs::File::create(&self.file_path)?; // Overwrite the existing file
-        serde_json::to_writer(cache_file, self)?;
+        // Update and re-cache
+        self.refresh(access_token_res);
+        self.cache().ok();
 
         // Return
         Ok(())

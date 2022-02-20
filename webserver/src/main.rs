@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use std::{str};
+use std::{str, path::PathBuf};
 
 use dotenv;
 use rocket::serde::json::Json;
@@ -11,6 +11,8 @@ mod environment;
 use environment::SpotifyAuthEnvVars;
 mod cors;
 use cors::CORS;
+
+use spotify_lib::{self, SpotifyApi, get_access_token_response};
 
 #[get("/")]
 fn index() -> &'static str {
@@ -24,8 +26,6 @@ fn alive() -> &'static str {
 
 #[get("/env")]
 fn environment_vars() -> Json<SpotifyAuthEnvVars> {
-    // Load the environment variables
-    dotenv::dotenv().ok();
     // Fill in the details for the env data
     let env_vars = SpotifyAuthEnvVars {
         client_id: dotenv::var("CLIENT_ID").unwrap(),
@@ -38,13 +38,21 @@ fn environment_vars() -> Json<SpotifyAuthEnvVars> {
 
 #[get("/?<code>&<state>")]
 fn code_extraction(code: &str, state: &str) -> Redirect {
-    println!("Code: {}", code);
-    println!("State: {}", state);
+    
+    let token_data = get_access_token_response(code).unwrap();
+    let cache_path = PathBuf::from( dotenv::var("CACHE_FILE").unwrap() );
+
+    let handler = SpotifyApi::from_token_data(&cache_path, token_data);
+    handler.cache().unwrap();
+    
     Redirect::to("http://localhost:3000/")
 }
 
 #[launch]
 fn rocket() -> _ {
+    // Load the environment variables
+    dotenv::dotenv().ok();
+
     let config = rocket::Config::figment()
                     .merge(("port", 5000));
     rocket::custom(config)
