@@ -31,8 +31,8 @@ This project is my modern take on the vinyl record player. I'm also using this p
 - [X] Understand how the RFID cards work
 - [ ] Finalize the RFID data serialization format
 - [ ] Build out a Spotify API library that can be used to access the API easily 
-- [ ] Build a basic front end to allow the user to login with their spotify account. Have this complete the authorization process & cache tokens
-- [ ] Create a backend that can handle the spotify redirects, and any other hardware specific configuration I want to acheive from the front end
+- [X] Build a basic front end to allow the user to login with their spotify account. Have this complete the authorization process & cache tokens
+- [X] Create a backend that can handle the spotify redirects, and any other hardware specific configuration I want to acheive from the front end
     * Set the WiFi creds, login to spotify, etc.
 - [ ] Create a way to program the RFID cards from the frontend
 - [ ] ???

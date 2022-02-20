@@ -22,7 +22,7 @@ function craftLoginRequest(setLoginURL) {
             redirect_uri: credentials.redirect_uri,
             state: craftRandomState(),
             scope: credentials.scope,
-            show_dialog: "true"
+            show_dialog: "true",
           })
       );
     })
@@ -34,10 +34,24 @@ function craftLoginRequest(setLoginURL) {
 
 export const CredentialLogin = () => {
   const [loginURL, setLoginURL] = useState("");
+  const [userData, setUserData] = useState({ logged_in: false, user_name: "" });
 
   useEffect(() => {
     craftLoginRequest(setLoginURL);
   }, []);
 
-  return (<button onClick={() => {window.open(loginURL, "_self");}}>Log In</button>);
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/user")
+      .then((res) => {
+        setUserData(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
+  return (userData.user_name === "") 
+  ? (<button onClick={() => {window.open(loginURL, "_self");}}>Log In</button>)
+  : (<p>Logged in as: {userData.user_name}</p>);
 };

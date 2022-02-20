@@ -3,6 +3,7 @@ use ureq;
 
 use std::time;
 
+use serde_json::Value;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::path::PathBuf;
@@ -169,11 +170,23 @@ impl SpotifyApi {
     // Endpoint Functions
     //
 
+    pub fn get_user_name(&mut self) -> Result<String, Box<dyn Error>> {
+        self.check_token_expiration()?;
+
+        let res: Value = ureq::get("https://api.spotify.com/v1/me")
+            .set("Authorization", self.bearer_auth_string().as_str())
+            .set("Content-Type", "application/json")
+            .call()?
+            .into_json()?;
+
+        Ok(res["display_name"].as_str().unwrap().to_owned())
+    }
+
     pub fn pause_playback(&mut self) -> Result<ureq::Response, Box<dyn Error>> {
         self.check_token_expiration()?;
 
         let res = ureq::put("https://api.spotify.com/v1/me/player/pause")
-            .set("Authorization", self.basic_auth_string.as_str())
+            .set("Authorization", self.bearer_auth_string().as_str())
             .set("Content-Type", "application/json")
             .set("Content-Length", "0")
             .call()?;
@@ -184,7 +197,7 @@ impl SpotifyApi {
         self.check_token_expiration()?;
 
         let res = ureq::put("https://api.spotify.com/v1/me/player/play")
-            .set("Authorization", self.basic_auth_string.as_str())
+            .set("Authorization", self.bearer_auth_string().as_str())
             .set("Content-Type", "application/json")
             .send_json(ureq::json!({
                 "uris" : ["spotify:track:6o46wIUnoKS8UABL36UuLL"],
@@ -195,6 +208,12 @@ impl SpotifyApi {
     //
     // Private Helper Functions
     //
+
+    fn bearer_auth_string(&self) -> String {
+        let mut output = "Bearer ".to_owned();
+        output.push_str(self.access_token.as_str());
+        output
+    }
 
     fn check_token_expiration(&mut self) -> Result<(), Box<dyn Error>> {
         // Get 'now' in terms of a duration

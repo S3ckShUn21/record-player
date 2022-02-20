@@ -4,7 +4,7 @@ extern crate rocket;
 use std::{str, path::PathBuf};
 
 use dotenv;
-use rocket::serde::json::Json;
+use rocket::serde::json::{Json, json, Value};
 use rocket::response::Redirect;
 
 mod environment;
@@ -36,6 +36,27 @@ fn environment_vars() -> Json<SpotifyAuthEnvVars> {
     Json(env_vars)
 }
 
+#[get("/user")]
+fn is_logged_in() -> Value {
+    let cache_path = PathBuf::from( dotenv::var("CACHE_FILE").unwrap() );
+    match SpotifyApi::read(&cache_path) {
+        Ok(mut h) => {
+            let user_name = h.get_user_name().unwrap();
+            return json!({
+                "logged_in" : true,
+                "user_name" : user_name,
+            });
+        },
+        Err(e) => {
+            println!("{:?}", e);
+            return json!({
+                "logged_in" : false,
+                "user_name" : "",
+            });
+        }
+    };
+}
+
 #[get("/?<code>&<state>")]
 fn code_extraction(code: &str, state: &str) -> Redirect {
     
@@ -57,6 +78,6 @@ fn rocket() -> _ {
                     .merge(("port", 5000));
     rocket::custom(config)
         .attach(CORS)
-        .mount("/", routes![index, alive, environment_vars, code_extraction])
+        .mount("/", routes![index, alive, environment_vars, is_logged_in, code_extraction])
         
 }
