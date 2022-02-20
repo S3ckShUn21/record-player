@@ -1,0 +1,10 @@
+* I need a login button to be able to log in to spotify and store the user credentials to the record-player
+    -> I need to attempt to call something from my backend ( to see if it is alive )
+        |-> If I cannot connect to the backend I should show an error on the front end
+    -> I need to call my backend to see if I am logged in
+        |-> If I am logged in, then I can show my user name or something
+        |-> Otherwise I should show the login button
+
+* Dark theme color background
+* Centered Title
+* Then the actual content in the middle
