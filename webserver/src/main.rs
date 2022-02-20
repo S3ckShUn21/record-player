@@ -1,11 +1,16 @@
 #[macro_use]
 extern crate rocket;
 
-use std::fs;
-use std::io;
-use std::str;
+use std::{str};
 
+use dotenv;
+use rocket::serde::json::Json;
+use rocket::response::Redirect;
+
+mod environment;
+use environment::SpotifyAuthEnvVars;
 mod cors;
+use cors::CORS;
 
 #[get("/")]
 fn index() -> &'static str {
@@ -14,22 +19,28 @@ fn index() -> &'static str {
 
 #[get("/alive")]
 fn alive() -> &'static str {
-    "Backend Alive"
+    "alive"
+}
+
+#[get("/env")]
+fn environment_vars() -> Json<SpotifyAuthEnvVars> {
+    // Load the environment variables
+    dotenv::dotenv().ok();
+    // Fill in the details for the env data
+    let env_vars = SpotifyAuthEnvVars {
+        client_id: dotenv::var("CLIENT_ID").unwrap(),
+        scope: dotenv::var("SCOPE").unwrap(),
+        redirect_uri: dotenv::var("REDIRECT_URI").unwrap(),
+    };
+    // Send the data as json
+    Json(env_vars)
 }
 
 #[get("/?<code>&<state>")]
-fn code_extraction(code: &str, state: &str) -> io::Result<&'static str> {
-    // Check to see if the state is a match
-    let file_bytes = fs::read("state")?;
-    let current_state: &str = str::from_utf8(&file_bytes).unwrap();
-
-    if current_state == state {
-        // Write the code retrieved from the query to the code file
-        fs::write("code", code)?;
-        Ok("Login Successful!")
-    } else {
-        Ok("Error: State Invalid!")
-    }
+fn code_extraction(code: &str, state: &str) -> Redirect {
+    println!("Code: {}", code);
+    println!("State: {}", state);
+    Redirect::to("http://localhost:3000/")
 }
 
 #[launch]
@@ -37,7 +48,7 @@ fn rocket() -> _ {
     let config = rocket::Config::figment()
                     .merge(("port", 5000));
     rocket::custom(config)
-        .attach(cors::CORS)
-        .mount("/", routes![index, alive, code_extraction])
+        .attach(CORS)
+        .mount("/", routes![index, alive, environment_vars, code_extraction])
         
 }
