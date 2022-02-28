@@ -2,7 +2,15 @@
 target/
 debug/
 testbench/
-# For making executables (leave it for libs)
-Cargo.lock
+
+# Dev Environment
+.vscode
+
 # For using dotenv files
 .env
+
+# Python
+__pycache__
+
+# Rust
+Cargo.lock
