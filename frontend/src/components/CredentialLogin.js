@@ -34,7 +34,7 @@ function craftLoginRequest(setLoginURL) {
 
 export const CredentialLogin = () => {
   const [loginURL, setLoginURL] = useState("");
-  const [userData, setUserData] = useState({ logged_in: false, user_name: "" });
+  const [userData, setUserData] = useState({ valid: false, username: "" });
 
   useEffect(() => {
     craftLoginRequest(setLoginURL);
@@ -51,7 +51,7 @@ export const CredentialLogin = () => {
       });
   }, []);
 
-  return (userData.user_name === "") 
-  ? (<button onClick={() => {window.open(loginURL, "_self");}}>Log In</button>)
-  : (<p>Logged in as: {userData.user_name}</p>);
+  return (userData.valid)  
+  ? (<p>Logged in as: {userData.username}</p>)
+  : (<button onClick={() => {window.open(loginURL, "_self");}}>Log In</button>);
 };

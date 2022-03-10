@@ -6,7 +6,9 @@ testbench/
 # Dev Environment
 .vscode
 
-# For using dotenv files
+# Cache and env files
+user.json
+cache.json
 .env
 
 # Python
